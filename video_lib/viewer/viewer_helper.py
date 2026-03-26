@@ -12,12 +12,6 @@ class ViewerHelper:
     """Helper class for video viewer operations."""
 
     def __init__(self, root_dir: Path):
-        """
-        Initialize viewer helper.
-
-        Args:
-            root_dir: Project root directory
-        """
         self.root_dir = root_dir
         self.paths = PathManager(root_dir)
 
@@ -60,7 +54,6 @@ class ViewerHelper:
                     continue
 
                 if filter_generated:
-                    # Check if content exists for this subchapter
                     cache_path = self._get_cache_path(book, chapter_path.name, sub_path.name)
                     if cache_path and cache_path.exists():
                         sub_dirs.append(sub_path.name)
@@ -85,16 +78,9 @@ class ViewerHelper:
         """
         Load videos for a subchapter.
 
-        Args:
-            book: Book name
-            chapter: Chapter directory name
-            subchapter: Subchapter directory name
-            language: Target language
-
         Returns:
-            Tuple of (videos list, metadata dict with chapter info)
+            Tuple of (videos list, metadata dict)
         """
-        # Load job.json to get original paragraphs
         job_path = self.root_dir / "contents" / "books" / book / chapter / subchapter / "job.json"
         if not job_path.exists():
             raise FileNotFoundError(f"Job file not found: {job_path}")
@@ -106,29 +92,25 @@ class ViewerHelper:
         raw_subchapter = job_data.get("subchapter", "")
         para_data_list = job_data.get("paragraphs", [])
 
-        # Create Paragraph objects
         paragraphs = []
         for p in para_data_list:
             paragraphs.append(Paragraph(
                 text=p.get("original", ""),
-                hash=p.get("hash", "")[:16],  # Truncate to 16 chars
+                hash=p.get("hash", "")[:16],
                 is_heading=(p.get("type") == "heading")
             ))
 
-        # Load cache if it exists
         cache_path = self._get_cache_path(book, chapter, subchapter)
         cache = {}
         if cache_path and cache_path.exists():
             with open(cache_path, "r", encoding="utf-8") as f:
                 cache = json.load(f)
 
-        # Create Video objects for all paragraphs
         videos = []
         for para in paragraphs:
             entry = cache.get(para.hash, {})
             video_content = entry.get("video_content", "")
 
-            # Check for audio file
             audio_path = self._get_audio_path(book, chapter, subchapter, para.hash, para.text)
 
             videos.append(Video(
@@ -148,8 +130,7 @@ class ViewerHelper:
         return videos, metadata
 
     def _get_cache_path(self, book: str, chapter: str, subchapter: str) -> Optional[Path]:
-        """Get cache.json path, trying both normalized and directory names."""
-        # Try normalized names first (standard path)
+        """Get cache.json path, trying normalized then raw directory names."""
         norm_chapter = TextProcessor.normalize(chapter, remove_spaces=True)
         norm_sub = TextProcessor.normalize(subchapter, remove_spaces=True)
 
@@ -157,7 +138,6 @@ class ViewerHelper:
         if cache_path.exists():
             return cache_path
 
-        # Try directory names as fallback
         cache_path = self.paths.get_cache_json_path(book, chapter, subchapter)
         if cache_path.exists():
             return cache_path
@@ -172,7 +152,10 @@ class ViewerHelper:
         para_hash: str,
         text: str
     ) -> Optional[Path]:
-        """Resolve audio: expected path, then any ``{hash}_*.mp3`` in the folder."""
+        """
+        Resolve audio path: expected name (default style/voice), then any
+        ``{hash}_*.mp3`` in the video folder (handles legacy voice/style slugs).
+        """
         norm_chapter = TextProcessor.normalize(chapter, remove_spaces=True)
         norm_sub = TextProcessor.normalize(subchapter, remove_spaces=True)
 
@@ -199,19 +182,7 @@ class ViewerHelper:
         subchapter: str,
         filename: str
     ) -> Optional[Path]:
-        """
-        Get full path to audio file.
-
-        Args:
-            book: Book name
-            chapter: Chapter name
-            subchapter: Subchapter name
-            filename: Audio filename
-
-        Returns:
-            Path to audio file or None if not found
-        """
-        # Try normalized names
+        """Get full path to a served audio file."""
         norm_chapter = TextProcessor.normalize(chapter, remove_spaces=True)
         norm_sub = TextProcessor.normalize(subchapter, remove_spaces=True)
 

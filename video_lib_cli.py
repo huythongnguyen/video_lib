@@ -17,8 +17,8 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from video_lib.job_processor import JobProcessor
-from video_lib.voices import ResonaVoice
-from video_lib.content_styles import ContentStyle
+from video_lib.audio.voices import ResonaVoice
+from video_lib.content.content_styles import ContentStyle
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"""
 Examples:
-    # Process a job file with default settings (Vietnamese, Gemini, Vân Anh voice, Conversational style)
+    # Process a job file with default settings (Vietnamese, Gemini, HO_MIN_MANG voice, Conversational style)
     python video_lib_cli.py contents/books/Meaningful-to-Behold/14_Effort/08_EXAMININGTHECAUSEOFINDOLENCE/job.json
 
     # Use different voice and content style (enum names)

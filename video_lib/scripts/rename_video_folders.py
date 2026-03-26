@@ -7,8 +7,9 @@ import argparse
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Repo root: video_lib/scripts -> video_lib -> root
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_REPO_ROOT))
 
 from video_lib.utils import TextProcessor
 
@@ -217,21 +218,21 @@ def main():
         epilog="""
 Examples:
     # Dry run (show what would be done)
-    python rename_video_folders.py
+    python video_lib/scripts/rename_video_folders.py
 
     # Actually rename folders
-    python rename_video_folders.py --execute
+    python video_lib/scripts/rename_video_folders.py --execute
 
     # Custom root directory
-    python rename_video_folders.py --root /path/to/project --execute
+    python video_lib/scripts/rename_video_folders.py --root /path/to/project --execute
         """
     )
 
     parser.add_argument(
         "--root",
         type=Path,
-        default=script_dir.parent,
-        help="Project root directory (default: auto-detect)"
+        default=script_dir.parent.parent,
+        help="Project root directory (default: repository root)"
     )
 
     parser.add_argument(

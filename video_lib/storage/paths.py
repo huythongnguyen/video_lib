@@ -1,4 +1,5 @@
 """Centralized path management for all content."""
+import os
 from pathlib import Path
 from typing import Optional, Union
 from video_lib.utils import TextProcessor
@@ -6,6 +7,27 @@ from video_lib.utils import TextProcessor
 
 class PathManager:
     """Manage all file paths for books and video content."""
+    @staticmethod
+    def path_exists(path: Path) -> bool:
+        """
+        Windows: use extended-length paths to avoid MAX_PATH issues.
+        Python's Path.exists()/os.path.exists can incorrectly return False
+        for already-existing files when the full path is very long.
+        """
+        if os.name == "nt":
+            p = str(path)
+            # Threshold chosen to align with common Windows MAX_PATH failure modes.
+            if len(p) >= 250:
+                p_resolved = str(path.resolve())
+                if p_resolved.startswith("\\\\"):
+                    # UNC path
+                    ext = "\\\\?\\UNC\\" + p_resolved[2:]
+                else:
+                    ext = "\\\\?\\" + p_resolved
+                return os.path.exists(ext)
+
+        return path.exists()
+
 
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
@@ -67,6 +89,7 @@ class PathManager:
         Returns:
             Short code from enum name (e.g., "ho_min_mang", "van_anh")
         """
+        # Import here to avoid circular dependency
         from video_lib.audio.voices import ResonaVoice
 
         if voice is None:
@@ -150,7 +173,7 @@ class PathManager:
     ) -> bool:
         """Check if audio file exists for a paragraph hash."""
         audio_path = self.get_video_audio_path(book, chapter, subchapter, para_hash, text, style, voice)
-        return audio_path.exists()
+        return self.path_exists(audio_path)
 
     # ====================
     # Filename Generation

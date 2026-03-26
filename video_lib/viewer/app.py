@@ -7,9 +7,9 @@ from video_lib.viewer.viewer_helper import ViewerHelper
 _VIEWER_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, template_folder=str(_VIEWER_DIR / "templates"))
 
+# Project root: viewer/ -> video_lib/ -> repo root
 project_root = _VIEWER_DIR.parent.parent
 
-# Initialize viewer helper
 viewer = ViewerHelper(project_root)
 
 
