@@ -21,13 +21,18 @@ Create a `.env` file in the project root:
 # For Resona TTS (required)
 RESONA_API_KEY=rsk_your_key_here
 
-# For Gemini (optional - only if using Gemini instead of Claude Code)
+# For Gemini (optional — use one of these)
 GOOGLE_API_KEY=your_key_here
+# or
+GEMINI_API_KEY=your_key_here
+
+# Optional: override Gemini model id
+# GEMINI_MODEL=gemini-2.0-flash
 ```
 
 ### 3. Generate Job Files
 
-First, extract paragraphs from markdown books into structured job files:
+Extract paragraphs from markdown books into structured job files:
 
 ```bash
 python video_lib/scripts/generate_contents.py
@@ -44,11 +49,11 @@ This creates `contents/books/<book>/<chapter>/<subchapter>/job.json` files.
 Process job files to create Vietnamese video scripts and audio:
 
 ```bash
-# Basic usage (default: Vietnamese, Gemini, Vân Anh voice, Conversational style)
+# Basic usage (default: Vietnamese, Gemini, HO_MIN_MANG voice, Conversational style)
 python video_lib_cli.py contents/books/Meaningful-to-Behold/14_Effort/08_EXAMININGTHECAUSEOFINDOLENCE/job.json
 
-# With custom voice and content style
-python video_lib_cli.py path/to/job.json --voice "Thanh Nhã" --style thought-provoking
+# With custom voice and content style (enum names recommended)
+python video_lib_cli.py path/to/job.json --voice TUE_AN --style COMPASSIONATE
 
 # Use Claude Code CLI
 python video_lib_cli.py path/to/job.json --llm claude
@@ -62,8 +67,9 @@ python video_lib_cli.py path/to/job.json --force
 ```
 
 **Output:** Generated content in `contents/video_content/<book>/<chapter>/<subchapter>/`
-- `cache.json` - Video scripts
-- `<hash>_<style>_<voice>_<snippet>.mp3` - Audio files
+
+- `cache.json` — Video scripts
+- `<hash>_<style>_<voice>_<snippet>.mp3` — Audio files
 
 ### 5. View in Browser
 
@@ -76,15 +82,18 @@ python video_lib/viewer/app.py
 
 ### Recommended Buddhist Voices
 
+Default CLI voice is **Hổ Mịn Màng** (`HO_MIN_MANG`). Other calm options:
+
 | Voice | Gender | Region | Description |
 |---|---|---|---|
-| **Vân Anh** (default) | Female | Miền Bắc | Calm, elegant voice |
+| **Hổ Mịn Màng** (CLI default) | Male | Miền Bắc | Soft, smooth tone |
+| Vân Anh | Female | Miền Bắc | Calm, elegant |
 | Thanh Nhã | Female | Miền Bắc | Elegant and peaceful |
 | Tuệ An | Female | Miền Nam | Wisdom and peace |
-| Thuỷ Nguyên | Female | Miền Bắc | Water source, gentle |
+| Thuỷ Nguyên | Female | Miền Bắc | Gentle |
 | Suối Chậm Chạp | Female | Miền Nam | Slow stream, calm |
 
-**50+ voices available.** Use `--list-voices` to see all options.
+**50+ voices available.** Use `--list-voices` to see all options. Pass `--voice` as an enum name (e.g. `HO_MIN_MANG`, `VAN_ANH`).
 
 ## Content Styles
 
@@ -103,7 +112,7 @@ Transform Buddhist teachings into different engaging formats:
 | Philosophical | Analytical, deep | Deeper concept exploration |
 | Humorous | Light, playful | Accessible through gentle humor |
 
-Use `--list-styles` to see detailed descriptions.
+Use `--list-styles` for details. Pass `--style` as an enum name (e.g. `COMPASSIONATE`).
 
 ## CLI Options
 
@@ -116,8 +125,8 @@ Required:
 Options:
   --language TEXT          Target language (default: Vietnamese)
   --llm {claude|gemini}    LLM provider (default: gemini)
-  --voice TEXT             TTS voice name (default: Vân Anh)
-  --style TEXT             Content style (default: Conversational)
+  --voice TEXT             TTS voice enum name (default: HO_MIN_MANG)
+  --style TEXT             Content style enum name (default: CONVERSATIONAL)
   --force                  Force regeneration (ignore cache)
   --list-voices            List all available voices
   --list-styles            List all content styles
@@ -128,87 +137,82 @@ Options:
 ```
 buddhist-content/
 ├── video_lib/                    # Main library
-│   ├── models.py                 # Video, SubChapter, Paragraph
-│   ├── parser.py                 # BookParser
-│   ├── llm_client.py             # Claude Code or Gemini
-│   ├── resona_client.py          # TTS client
-│   ├── generator.py              # Main orchestrator
-│   ├── cache.py                  # Cache manager
-│   ├── paths.py                  # Path management
-│   ├── prompts.py                # Prompt templates
-│   ├── utils.py                  # Shared utilities
-│   ├── voices.py                 # Voice enum (50+ voices)
-│   ├── content_styles.py         # Content style enum
-│   ├── job_processor.py          # CLI job processing
-│   ├── viewer_helper.py          # Viewer utilities
+│   ├── models.py
+│   ├── parser.py
+│   ├── generator.py
+│   ├── job_processor.py
+│   ├── utils.py
+│   ├── audio/                    # TTS & voices
+│   │   ├── resona_client.py
+│   │   └── voices.py
+│   ├── content/                  # Prompts & styles
+│   │   ├── prompts.py
+│   │   └── content_styles.py
+│   ├── llm/
+│   │   └── client.py             # Claude Code or Gemini
+│   ├── storage/
+│   │   ├── cache.py
+│   │   └── paths.py
 │   ├── viewer/                   # Flask web app
-│   │   └── app.py
+│   │   ├── app.py
+│   │   ├── viewer_helper.py
+│   │   └── templates/
 │   └── scripts/                  # Utility scripts
-│       ├── generate_contents.py  # Generate job.json files
-│       └── rename_video_folders.py  # Rename folders to match books structure
+│       ├── generate_contents.py
+│       └── rename_video_folders.py
 │
 ├── contents/
-│   ├── books/                    # Raw book content (extracted)
-│   │   └── <book>/
-│   │       └── XX_<chapter>/
-│   │           └── XX_<subchapter>/
-│   │               └── job.json
-│   │
-│   └── video_content/            # Generated content + audio
-│       └── <book>/
-│           └── XX_<chapter>/
-│               └── XX_<subchapter>/
-│                   ├── cache.json
-│                   └── <hash>_<style>_<voice>_<snippet>.mp3
+│   ├── books/                    # Book jobs (extracted)
+│   │   └── <book>/XX_<chapter>/XX_<subchapter>/job.json
+│   └── video_content/            # Generated cache + audio
+│       └── <book>/...
 │
-├── md/                           # Source books
-│   └── Meaningful-to-Behold.md
-│
+├── md/                           # Source markdown books
 ├── video_lib_cli.py              # CLI entry point
-└── pyproject.toml
+├── pyproject.toml
+└── README.md
 ```
 
 ## Python API
 
 ```python
+from pathlib import Path
 from video_lib.generator import VideoGenerator
-from video_lib.voices import ResonaVoice
-from video_lib.content_styles import ContentStyle
+from video_lib.audio.voices import ResonaVoice
+from video_lib.content.content_styles import ContentStyle
 
-# Create generator with custom voice and style
 gen = VideoGenerator(
     "Meaningful-to-Behold.md",
     language="Vietnamese",
     llm_provider="gemini",
-    voice=ResonaVoice.THANH_NHA,  # or voice name string
-    content_style=ContentStyle.THOUGHT_PROVOKING  # or style name string
+    voice=ResonaVoice.THANH_NHA,
+    content_style=ContentStyle.THOUGHT_PROVOKING,
+    root_dir=Path.cwd(),
 )
 
-# Process a sub-chapter
 result = gen.process(
     chapter="Effort",
-    subchapter="EXAMININGTHECAUSEOFINDOLENCE"
+    subchapter="EXAMININGTHECAUSEOFINDOLENCE",
 )
 
-# Check results
 print(f"Generated {len(result.videos)} videos")
 print(f"Completion: {result.completion_rate():.1f}%")
 ```
 
 ## Features
 
-- ✅ **Multiple Voices** - 50+ Vietnamese voices, 5 recommended for Buddhist content
-- ✅ **Content Styles** - 10 different writing styles for varied engagement
-- ✅ **Multi-language** - Vietnamese, English, and more
-- ✅ **Dual LLM Support** - Claude Code CLI (no API key) or Gemini API
-- ✅ **Smart Caching** - Reuse generated content and audio
-- ✅ **Hash-based Naming** - Traceable filenames with style/voice metadata
-- ✅ **Web Viewer** - Browse and play generated videos
-- ✅ **Clean Architecture** - DRY principles, class-based utilities
+- **Multiple voices** — 50+ Vietnamese voices; several recommended for Buddhist content
+- **Content styles** — 10 writing styles for varied engagement
+- **Multi-language** — Vietnamese, English, and more
+- **Dual LLM support** — Claude Code CLI or Gemini API
+- **Caching** — Reuse generated content and audio
+- **Hash-based naming** — Traceable filenames with style/voice metadata
+- **Web viewer** — Browse and play generated clips
+- **Modular layout** — `audio/`, `content/`, `llm/`, `storage/`, `viewer/`
 
 ## Utility Scripts
 
-### Generate Job Files
+### Generate job files
 
 ```bash
 python video_lib/scripts/generate_contents.py [OPTIONS]
@@ -219,9 +223,7 @@ Options:
   --quiet          Suppress detailed output
 ```
 
-Creates structured job files from markdown books.
-
-### Rename Video Folders
+### Rename video folders
 
 ```bash
 python video_lib/scripts/rename_video_folders.py [OPTIONS]
@@ -231,28 +233,25 @@ Options:
   --execute        Actually rename (default is dry-run)
 ```
 
-Renames `video_content/` folders to match `books/` structure (XX_Name format).
+Renames `contents/video_content/` folders to match `contents/books/` (`XX_Name` format).
 
-## Filename Format
+## Filename format
 
-Audio files follow this naming convention:
+Audio files use:
 
 ```
 <16-char-hash>_<style-code>_<voice-code>_<text-snippet>.mp3
 ```
 
-**Example:**
+Example:
+
 ```
-a31d73f9600efb31_conv_vananh_when_overcome_by.mp3
-│                │    │       └─ First 3 words of text
-│                │    └─────── Voice code (vananh = Vân Anh)
-│                └──────────── Style code (conv = Conversational)
-└───────────────────────────── Paragraph hash (traceable)
+a31d73f9600efb31_conv_ho_min_mang_when_overcome_by.mp3
 ```
 
-## Job File Format
+## Job file format
 
-Job files are located at `contents/books/<book>/<chapter>/<subchapter>/job.json`:
+`contents/books/<book>/<chapter>/<subchapter>/job.json`:
 
 ```json
 {
@@ -276,80 +275,43 @@ Job files are located at `contents/books/<book>/<chapter>/<subchapter>/job.json`
 }
 ```
 
-## Cache File Format
+## Cache file format
 
-Generated content is stored in `contents/video_content/<book>/<chapter>/<subchapter>/cache.json`:
-
-```json
-{
-  "1b142c86f6e83dee": {
-    "original": "### EXAMINING THE CAUSE OF INDOLENCE",
-    "video_content": null
-  },
-  "a31d73f9600efb31": {
-    "original": "When overcome by the laziness of indolence...",
-    "video_content": "Đã bao giờ bạn cảm thấy mình chỉ muốn nằm dài..."
-  }
-}
-```
+`contents/video_content/<book>/<chapter>/<subchapter>/cache.json` maps paragraph hashes to generated text.
 
 ## Development
 
-### Architecture Principles
+### Architecture
 
-- **DRY (Don't Repeat Yourself)** - Shared utilities in class-based modules
-- **Single Responsibility** - Each module has one clear purpose
-- **Centralized Path Management** - All paths generated in `PathManager`
-- **Enum-based Configuration** - Type-safe voice and style selection
+- Shared utilities in `video_lib.utils`
+- Paths and audio naming in `video_lib.storage.paths.PathManager`
+- Voice and style enums in `video_lib.audio.voices` and `video_lib.content.content_styles`
 
-### Adding New Voices
+### Adding voices
 
-Edit `video_lib/voices.py` to add new voices:
+Edit `video_lib/audio/voices.py` and add a `VoiceConfig` entry on `ResonaVoice`.
 
-```python
-NEW_VOICE = VoiceConfig(
-    voice_id="voice_id_from_resona",
-    name="Voice Name",
-    gender="Nữ",
-    region="Miền Bắc",
-    recommended_for_buddhist=True,  # if suitable
-    description="Description of voice"
-)
-```
+### Adding content styles
 
-### Adding New Content Styles
-
-Edit `video_lib/content_styles.py`:
-
-```python
-NEW_STYLE = StyleConfig(
-    name="Style Name",
-    tone="Tone description",
-    approach="Approach description",
-    description="When to use this style"
-)
-```
+Edit `video_lib/content/content_styles.py` and add a `StyleConfig` entry on `ContentStyle`.
 
 ## Troubleshooting
 
-### GOOGLE_API_KEY not found
-- Add to `.env`: `GOOGLE_API_KEY=your_key`
-- Or use Claude: `--llm claude`
+### Gemini API key not found
+
+- Set `GOOGLE_API_KEY` or `GEMINI_API_KEY` in `.env`, or use `--llm claude`.
 
 ### RESONA_API_KEY not found
-- Add to `.env`: `RESONA_API_KEY=rsk_your_key`
-- Get key from https://resona.live
+
+- Add `RESONA_API_KEY=rsk_...` to `.env` (see https://resona.live).
 
 ### Job file not found
-- Run `python video_lib/scripts/generate_contents.py` first
 
-### Audio not generating
-- Check Resona API key is valid
-- Check network connection
-- Review error messages in CLI output
+- Run `python video_lib/scripts/generate_contents.py` first.
 
 ### Folder structure mismatch
-- Run `python video_lib/scripts/rename_video_folders.py --execute`
+
+- Run `python video_lib/scripts/rename_video_folders.py --execute` after reviewing dry-run output.
 
 ## License
 

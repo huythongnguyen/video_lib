@@ -27,9 +27,9 @@ ENV/
 env/
 .venv
 
-# IDE
-.vscode/*
-!.vscode/settings.json
+# IDE & local tooling (keep on disk; do not commit)
+.claude/
+.vscode/
 .idea/
 *.swp
 *.swo
