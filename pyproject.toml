@@ -1,0 +1,25 @@
+[project]
+name = "video-lib"
+version = "0.1.0"
+description = "Generate short videos with content and audio"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=3.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+gemini = [
+    "google-generativeai>=0.8.0",
+]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+video-lib = "video_lib_cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
